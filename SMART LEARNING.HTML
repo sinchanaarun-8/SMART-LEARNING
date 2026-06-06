@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudyAI — Smart Learning Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0B0D14;--surface:#12151F;--card:#181C29;--card2:#1E2335;
+  --accent:#7C6AF7;--accent2:#4ECDC4;--accent3:#FFD166;--accent4:#FF6B9D;
+  --text:#EEEEF2;--muted:#7A7F9A;--border:rgba(255,255,255,0.07);
+  --radius:14px;--font-head:'Syne',sans-serif;--font-body:'DM Sans',sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);min-height:100vh;overflow-x:hidden}
+.app{display:flex;min-height:100vh}
+
+/* ── SIDEBAR ── */
+.sidebar{width:240px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;height:100vh;z-index:100;overflow-y:auto}
+.logo{padding:28px 24px 20px;display:flex;align-items:center;gap:10px}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.logo-text{font-family:var(--font-head);font-weight:800;font-size:16px;letter-spacing:-0.3px}
+.logo-sub{font-size:11px;color:var(--muted);font-weight:400}
+.nav{padding:8px 12px;flex:1}
+.nav-section{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;padding:16px 12px 8px;font-weight:600}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;font-size:14px;color:var(--muted);transition:all 0.2s;margin-bottom:2px;border:none;background:none;width:100%;text-align:left;font-family:var(--font-body)}
+.nav-item:hover{background:var(--card);color:var(--text)}
+.nav-item.active{background:rgba(124,106,247,0.15);color:var(--accent);font-weight:500}
+.nav-item .icon{width:18px;height:18px;opacity:0.8;flex-shrink:0}
+.streak-badge{margin:16px 12px;background:linear-gradient(135deg,rgba(255,209,102,0.15),rgba(255,107,157,0.1));border:1px solid rgba(255,209,102,0.2);border-radius:var(--radius);padding:14px;text-align:center}
+.streak-fire{font-size:24px;margin-bottom:4px}
+.streak-num{font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--accent3)}
+.streak-label{font-size:11px;color:var(--muted)}
+
+/* ── MAIN ── */
+.main{margin-left:240px;flex:1;padding:0}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.page-title{font-family:var(--font-head);font-size:20px;font-weight:700}
+.topbar-right{display:flex;align-items:center;gap:16px}
+.exam-countdown{background:rgba(124,106,247,0.12);border:1px solid rgba(124,106,247,0.25);border-radius:10px;padding:8px 16px;font-size:13px;color:var(--accent)}
+.exam-countdown strong{font-weight:700;font-size:15px}
+.avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent4));display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-weight:700;font-size:14px;cursor:pointer}
+
+/* ── CONTENT ── */
+.content{padding:28px 32px}
+
+/* ── ONBOARDING ── */
+.onboarding{max-width:680px;margin:0 auto}
+.setup-header{text-align:center;margin-bottom:40px}
+.setup-header h1{font-family:var(--font-head);font-size:36px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
+.setup-header p{color:var(--muted);font-size:16px}
+.setup-steps{display:flex;justify-content:center;gap:8px;margin-bottom:32px}
+.step-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.12);transition:all 0.3s}
+.step-dot.active{background:var(--accent);width:24px;border-radius:4px}
+.setup-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px}
+.setup-card h2{font-family:var(--font-head);font-size:20px;font-weight:700;margin-bottom:6px}
+.setup-card p{color:var(--muted);font-size:14px;margin-bottom:24px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-group.full{grid-column:1/-1}
+.form-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:600}
+.form-input{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:var(--font-body);font-size:14px;outline:none;transition:border-color 0.2s;width:100%}
+.form-input:focus{border-color:var(--accent)}
+.form-input::placeholder{color:var(--muted)}
+select.form-input option{background:var(--card2);color:var(--text)}
+.subject-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.chip{padding:6px 14px;border-radius:20px;border:1px solid var(--border);font-size:13px;cursor:pointer;transition:all 0.2s;background:var(--card2);color:var(--muted);font-family:var(--font-body)}
+.chip.selected{background:rgba(124,106,247,0.2);border-color:var(--accent);color:var(--accent)}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#5B4FD8);border:none;color:#fff;padding:14px 28px;border-radius:12px;font-family:var(--font-head);font-size:15px;font-weight:700;cursor:pointer;transition:all 0.2s;width:100%;margin-top:24px}
+.btn-primary:hover{opacity:0.9;transform:translateY(-1px)}
+
+/* ── METRICS ── */
+.metrics-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.metric-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden}
+.metric-card::before{content:'';position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;opacity:0.1}
+.metric-card.purple::before{background:var(--accent)}
+.metric-card.teal::before{background:var(--accent2)}
+.metric-card.yellow::before{background:var(--accent3)}
+.metric-card.pink::before{background:var(--accent4)}
+.metric-icon{font-size:22px;margin-bottom:10px}
+.metric-val{font-family:var(--font-head);font-size:28px;font-weight:800;line-height:1;margin-bottom:4px}
+.metric-val.purple{color:var(--accent)}
+.metric-val.teal{color:var(--accent2)}
+.metric-val.yellow{color:var(--accent3)}
+.metric-val.pink{color:var(--accent4)}
+.metric-label{font-size:12px;color:var(--muted)}
+.metric-change{font-size:11px;color:var(--accent2);margin-top:4px}
+
+/* ── READINESS ── */
+.readiness-section{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.readiness-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px}
+.readiness-card h3{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:20px;font-weight:600}
+.ring-wrap{display:flex;align-items:center;gap:24px}
+.ring-svg{width:120px;height:120px;flex-shrink:0}
+.ring-info h2{font-family:var(--font-head);font-size:38px;font-weight:800;color:var(--accent2)}
+.ring-info p{font-size:13px;color:var(--muted)}
+.ring-info .ring-status{font-size:14px;font-weight:600;color:var(--accent2);margin-top:4px}
+
+/* ── SUBJECT BARS ── */
+.subject-list{display:flex;flex-direction:column;gap:10px}
+.subject-row{display:flex;align-items:center;gap:12px}
+.subject-name{font-size:13px;font-weight:500;width:90px;flex-shrink:0}
+.subject-bar-wrap{flex:1;height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden}
+.subject-bar{height:100%;border-radius:4px;transition:width 1.2s ease}
+.subject-conf{font-size:11px;padding:3px 8px;border-radius:6px;font-weight:600;white-space:nowrap}
+.conf-low{background:rgba(255,107,157,0.15);color:var(--accent4)}
+.conf-med{background:rgba(255,209,102,0.15);color:var(--accent3)}
+.conf-high{background:rgba(78,205,196,0.15);color:var(--accent2)}
+
+/* ── SCHEDULE CARDS ── */
+.schedule-section{margin-bottom:24px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section-title{font-family:var(--font-head);font-size:17px;font-weight:700}
+.view-all{font-size:13px;color:var(--accent);cursor:pointer;background:none;border:none;font-family:var(--font-body)}
+.schedule-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.schedule-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;transition:all 0.2s;position:relative}
+.schedule-card:hover{border-color:rgba(124,106,247,0.4);transform:translateY(-2px)}
+.schedule-card.completed{opacity:0.6}
+.schedule-card.completed::after{content:'✓';position:absolute;top:12px;right:12px;width:22px;height:22px;background:var(--accent2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;line-height:22px;text-align:center;color:#fff}
+.sc-time{font-size:11px;color:var(--muted);margin-bottom:8px}
+.sc-subject{font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:4px}
+.sc-topic{font-size:12px;color:var(--muted);margin-bottom:10px}
+.sc-tag{display:inline-block;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
+.tag-high{background:rgba(255,107,157,0.15);color:var(--accent4)}
+.tag-med{background:rgba(255,209,102,0.15);color:var(--accent3)}
+.tag-done{background:rgba(78,205,196,0.15);color:var(--accent2)}
+.pomodoro-mini{display:flex;align-items:center;gap:4px;margin-top:8px}
+.pom-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);opacity:0.2}
+.pom-dot.done{opacity:1}
+
+/* ── POMODORO ── */
+.pomo-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;text-align:center;margin-bottom:24px}
+.pomo-ring{width:160px;height:160px;margin:0 auto 20px;position:relative}
+.pomo-ring svg{transform:rotate(-90deg)}
+.pomo-time{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:var(--font-head);font-size:32px;font-weight:800}
+.pomo-controls{display:flex;justify-content:center;gap:12px;margin-top:16px}
+.pomo-btn{background:rgba(124,106,247,0.15);border:1px solid rgba(124,106,247,0.3);color:var(--accent);padding:10px 24px;border-radius:10px;cursor:pointer;font-family:var(--font-head);font-size:14px;font-weight:700;transition:all 0.2s}
+.pomo-btn:hover{background:rgba(124,106,247,0.25)}
+.pomo-btn.active-btn{background:var(--accent);color:#fff}
+
+/* ── CHART CARDS ── */
+.chart-row{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:24px}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px}
+
+/* ── BADGES ── */
+.badges-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.badge-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;transition:all 0.2s;cursor:pointer}
+.badge-card:hover{transform:scale(1.04)}
+.badge-card.locked{opacity:0.35;filter:grayscale(1)}
+.badge-emoji{font-size:28px;margin-bottom:8px}
+.badge-name{font-family:var(--font-head);font-size:12px;font-weight:700}
+.badge-desc{font-size:10px;color:var(--muted);margin-top:2px}
+
+/* ── AI CARD ── */
+.ai-card{background:linear-gradient(135deg,rgba(124,106,247,0.1),rgba(78,205,196,0.05));border:1px solid rgba(124,106,247,0.2);border-radius:var(--radius);padding:24px;margin-bottom:24px}
+.ai-badge{background:linear-gradient(135deg,var(--accent),var(--accent2));padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:1px}
+.ai-insights{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.insight-item{background:rgba(255,255,255,0.04);border-radius:10px;padding:14px}
+.insight-item p{font-size:13px;color:var(--muted);line-height:1.6}
+.insight-item p strong{color:var(--text)}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:4px;background:var(--card);border-radius:10px;padding:4px;margin-bottom:24px;width:fit-content}
+.tab{padding:8px 18px;border-radius:8px;font-size:13px;cursor:pointer;color:var(--muted);background:none;border:none;font-family:var(--font-body);transition:all 0.2s;font-weight:500}
+.tab.active{background:var(--card2);color:var(--text)}
+
+/* ── PAGES ── */
+.page{display:none}
+.page.active{display:block}
+
+/* ── AI RESPONSE ── */
+.response-area{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:24px}
+.response-loading{padding:20px 24px;display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px}
+.dots span{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--accent);margin-right:3px;animation:dot 1.2s infinite}
+.dots span:nth-child(2){animation-delay:0.2s}
+.dots span:nth-child(3){animation-delay:0.4s}
+@keyframes dot{0%,80%,100%{transform:scale(0.6);opacity:0.4}40%{transform:scale(1);opacity:1}}
+.response-content{padding:20px 24px;font-size:14px;line-height:1.7;color:var(--text)}
+.response-content h4{font-family:var(--font-head);font-size:15px;font-weight:700;margin-bottom:10px;color:var(--accent)}
+.response-content ul{padding-left:18px;color:var(--muted)}
+.response-content ul li{margin-bottom:6px}
+.response-content ul li strong{color:var(--text)}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.fadein{animation:fadeIn 0.4s ease forwards}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  .sidebar{width:200px}
+  .main{margin-left:200px}
+  .content{padding:16px}
+  .metrics-row{grid-template-columns:repeat(2,1fr)}
+  .schedule-grid{grid-template-columns:1fr 1fr}
+  .readiness-section{grid-template-columns:1fr}
+  .chart-row{grid-template-columns:1fr}
+  .badges-row{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:560px){
+  .sidebar{display:none}
+  .main{margin-left:0}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ════════════════════════════════════
+       SIDEBAR
+  ════════════════════════════════════ -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">🧠</div>
+      <div>
+        <div class="logo-text">StudyAI</div>
+        <div class="logo-sub">Smart Planner</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <div class="nav-section">Main</div>
+      <button class="nav-item active" onclick="showPage('dashboard',this)">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-item" onclick="showPage('schedule',this)">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Schedule
+      </button>
+      <button class="nav-item" onclick="showPage('pomodoro',this)">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="12 6 12 12 16.5 12"/></svg>
+        Pomodoro Timer
+      </button>
+      <button class="nav-item" onclick="showPage('ai',this)">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        AI Insights
+      </button>
+      <div class="nav-section">Progress</div>
+      <button class="nav-item" onclick="showPage('analytics',this)">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Analytics
+      </button>
+      <button class="nav-item" onclick="showPage('achievements',this)">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="5"/><path d="M7 13l-4 8h18l-4-8"/></svg>
+        Achievements
+      </button>
+    </nav>
+    <div class="streak-badge">
+      <div class="streak-fire">🔥</div>
+      <div class="streak-num" id="streak-num">0</div>
+      <div class="streak-label">Day Streak</div>
+    </div>
+  </aside>
+
+  <!-- ════════════════════════════════════
+       MAIN AREA
+  ════════════════════════════════════ -->
+  <main class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="page-title" id="page-title">Dashboard</div>
+      <div class="topbar-right">
+        <div class="exam-countdown" id="countdown-display">Set your exam date</div>
+        <div class="avatar" title="Profile">JS</div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ══════════════════════════════
+           ONBOARDING (shown first)
+      ══════════════════════════════ -->
+      <div class="onboarding" id="onboarding">
+        <div class="setup-header">
+          <h1>Welcome to StudyAI 🎓</h1>
+          <p>Let's build your personalized study plan in 60 seconds</p>
+        </div>
+        <div class="setup-steps">
+          <div class="step-dot active" id="dot-0"></div>
+          <div class="step-dot" id="dot-1"></div>
+          <div class="step-dot" id="dot-2"></div>
+        </div>
+        <div class="setup-card fadein" id="step-card"></div>
+      </div>
+
+      <!-- ══════════════════════════════
+           PAGE: DASHBOARD
+      ══════════════════════════════ -->
+      <div class="page" id="page-dashboard">
+
+        <!-- Metric Cards -->
+        <div class="metrics-row">
+          <div class="metric-card purple">
+            <div class="metric-icon">📚</div>
+            <div class="metric-val purple" id="m-hours">0h</div>
+            <div class="metric-label">Hours Studied Today</div>
+            <div class="metric-change">↑ On track</div>
+          </div>
+          <div class="metric-card teal">
+            <div class="metric-icon">✅</div>
+            <div class="metric-val teal" id="m-tasks">0/5</div>
+            <div class="metric-label">Tasks Completed</div>
+            <div class="metric-change">↑ 2 remaining</div>
+          </div>
+          <div class="metric-card yellow">
+            <div class="metric-icon">🎯</div>
+            <div class="metric-val yellow" id="m-ready">0%</div>
+            <div class="metric-label">Exam Readiness</div>
+          </div>
+          <div class="metric-card pink">
+            <div class="metric-icon">⚡</div>
+            <div class="metric-val pink" id="m-streak">0</div>
+            <div class="metric-label">Day Streak</div>
+          </div>
+        </div>
+
+        <!-- Readiness Ring + Subject Confidence -->
+        <div class="readiness-section">
+          <div class="readiness-card">
+            <h3>📊 Exam Readiness</h3>
+            <div class="ring-wrap">
+              <svg class="ring-svg" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="12"/>
+                <circle id="readiness-ring" cx="60" cy="60" r="50" fill="none" stroke="var(--accent2)"
+                  stroke-width="12" stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="314"
+                  style="transition:stroke-dashoffset 1.5s ease;transform:rotate(-90deg);transform-origin:60px 60px"/>
+              </svg>
+              <div class="ring-info">
+                <h2 id="readiness-pct">0%</h2>
+                <p>Overall readiness</p>
+                <div class="ring-status" id="readiness-status">Getting started…</div>
+              </div>
+            </div>
+          </div>
+          <div class="readiness-card">
+            <h3>📖 Subject Confidence</h3>
+            <div class="subject-list" id="subject-confidence"></div>
+          </div>
+        </div>
+
+        <!-- Today's Schedule -->
+        <div class="schedule-section">
+          <div class="section-header">
+            <div class="section-title">📅 Today's Study Plan</div>
+            <button class="view-all" onclick="showPage('schedule',null)">View full schedule →</button>
+          </div>
+          <div class="schedule-grid" id="today-schedule"></div>
+        </div>
+
+        <!-- AI Insights -->
+        <div class="ai-card">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="font-family:var(--font-head);font-size:15px;font-weight:700">🤖 AI Insights</div>
+            <div class="ai-badge">Powered by Claude</div>
+          </div>
+          <div class="ai-insights" id="ai-insights-dash"></div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════
+           PAGE: SCHEDULE
+      ══════════════════════════════ -->
+      <div class="page" id="page-schedule">
+        <div class="tabs">
+          <button class="tab active" onclick="switchTab(this,'today')">Today</button>
+          <button class="tab" onclick="switchTab(this,'week')">This Week</button>
+          <button class="tab" onclick="switchTab(this,'revision')">Revision</button>
+        </div>
+        <div id="schedule-today">
+          <div class="schedule-grid" id="schedule-full"></div>
+        </div>
+        <div id="schedule-week" style="display:none">
+          <div class="chart-card">
+            <h3 style="font-family:var(--font-head);font-size:15px;font-weight:700;margin-bottom:16px">Weekly Study Hours</h3>
+            <div style="position:relative;height:240px">
+              <canvas id="weekChart" role="img" aria-label="Weekly study hours by day">Weekly study hours bar chart</canvas>
+            </div>
+          </div>
+        </div>
+        <div id="schedule-revision" style="display:none">
+          <div class="readiness-card">
+            <h3>🔄 Spaced Repetition Revision Queue</h3>
+            <div id="revision-list" style="margin-top:12px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════
+           PAGE: POMODORO
+      ══════════════════════════════ -->
+      <div class="page" id="page-pomodoro">
+        <div class="pomo-card">
+          <h3 style="font-family:var(--font-head);font-size:17px;font-weight:700;margin-bottom:6px">⏱ Pomodoro Timer</h3>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:24px">Stay focused with timed study sessions</p>
+          <div class="pomo-ring">
+            <svg width="160" height="160" viewBox="0 0 160 160">
+              <circle cx="80" cy="80" r="70" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10"/>
+              <circle id="pomo-ring-circle" cx="80" cy="80" r="70" fill="none" stroke="var(--accent)"
+                stroke-width="10" stroke-linecap="round" stroke-dasharray="440" stroke-dashoffset="0"
+                style="transition:stroke-dashoffset 1s linear;transform:rotate(-90deg);transform-origin:80px 80px"/>
+            </svg>
+            <div class="pomo-time" id="pomo-display">25:00</div>
+          </div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:4px" id="pomo-label">Focus Session</div>
+          <div style="display:flex;justify-content:center;gap:24px;margin:16px 0;flex-wrap:wrap">
+            <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px">
+              Focus
+              <select id="pomo-focus" class="form-input" style="width:70px;padding:6px 8px">
+                <option value="25">25</option><option value="30">30</option>
+                <option value="45">45</option><option value="50">50</option>
+              </select>
+              min
+            </label>
+            <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px">
+              Break
+              <select id="pomo-break" class="form-input" style="width:60px;padding:6px 8px">
+                <option value="5">5</option><option value="10">10</option><option value="15">15</option>
+              </select>
+              min
+            </label>
+          </div>
+          <div class="pomo-controls">
+            <button class="pomo-btn" onclick="pomodoroToggle()" id="pomo-start">▶ Start</button>
+            <button class="pomo-btn" onclick="pomodoroReset()">↺ Reset</button>
+          </div>
+          <div style="display:flex;justify-content:center;gap:8px;margin-top:20px" id="pomo-session-dots"></div>
+        </div>
+        <div class="metrics-row" style="grid-template-columns:repeat(3,1fr)">
+          <div class="metric-card purple">
+            <div class="metric-icon">🍅</div>
+            <div class="metric-val purple" id="pomo-count">0</div>
+            <div class="metric-label">Sessions Today</div>
+          </div>
+          <div class="metric-card teal">
+            <div class="metric-icon">⏰</div>
+            <div class="metric-val teal" id="pomo-focused">0m</div>
+            <div class="metric-label">Total Focus Time</div>
+          </div>
+          <div class="metric-card yellow">
+            <div class="metric-icon">🏆</div>
+            <div class="metric-val yellow">4</div>
+            <div class="metric-label">Daily Goal</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════
+           PAGE: AI INSIGHTS
+      ══════════════════════════════ -->
+      <div class="page" id="page-ai">
+        <div style="margin-bottom:20px">
+          <div style="font-size:14px;color:var(--muted);margin-bottom:12px">
+            Ask AI for personalised study advice based on your progress
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px" id="ai-prompts"></div>
+          <div style="display:flex;gap:10px">
+            <input type="text" id="ai-input" class="form-input"
+              placeholder="Ask anything about your study plan…" style="flex:1">
+            <button class="pomo-btn" onclick="askAI()" style="white-space:nowrap">🚀 Ask AI</button>
+          </div>
+        </div>
+        <div class="response-area" id="ai-response-area" style="display:none">
+          <div class="response-loading" id="ai-loading">
+            <div class="dots"><span></span><span></span><span></span></div>
+            Thinking…
+          </div>
+          <div class="response-content" id="ai-response-content" style="display:none"></div>
+        </div>
+        <div class="ai-card" style="margin-top:8px">
+          <div style="font-family:var(--font-head);font-size:15px;font-weight:700;margin-bottom:16px">
+            📺 AI-Recommended YouTube Resources
+          </div>
+          <div id="yt-recommendations"></div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════
+           PAGE: ANALYTICS
+      ══════════════════════════════ -->
+      <div class="page" id="page-analytics">
+        <div class="chart-row">
+          <div class="chart-card">
+            <h3 style="font-family:var(--font-head);font-size:15px;font-weight:700;margin-bottom:16px">📈 Weekly Readiness Progress</h3>
+            <div style="position:relative;height:240px">
+              <canvas id="progressChart" role="img" aria-label="Line chart of weekly readiness percentage">Weekly progress chart</canvas>
+            </div>
+          </div>
+          <div class="chart-card">
+            <h3 style="font-family:var(--font-head);font-size:15px;font-weight:700;margin-bottom:16px">🎯 Subject Breakdown</h3>
+            <div style="position:relative;height:240px">
+              <canvas id="subjectChart" role="img" aria-label="Doughnut chart of time spent per subject">Subject breakdown</canvas>
+            </div>
+          </div>
+        </div>
+        <div class="readiness-card">
+          <h3>📊 Learning Insights</h3>
+          <div id="analytics-insights" style="margin-top:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px"></div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════
+           PAGE: ACHIEVEMENTS
+      ══════════════════════════════ -->
+      <div class="page" id="page-achievements">
+        <div style="margin-bottom:20px;font-size:13px;color:var(--muted)">
+          Earn badges by hitting study milestones 🎖️
+        </div>
+        <div class="badges-row" id="badges-grid"></div>
+        <div class="readiness-card">
+          <h3>🏅 Weekly Challenges</h3>
+          <div style="margin-top:16px;display:flex;flex-direction:column;gap:14px" id="challenges"></div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </main>
+</div><!-- /app -->
+
+<script>
+/* ════════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════════ */
+const state = {
+  step: 0,
+  examDate: '',
+  goal: '',
+  weakSubjects: [],
+  studyHours: 3,
+  level: 'intermediate',
+  subjects: [],
+  streak: 7,
+  readinessScore: 62,
+  pomodoroActive: false,
+  pomodoroInterval: null,
+  pomodoroSeconds: 25 * 60,
+  pomodoroTotal: 25 * 60,
+  pomodoroSessions: 0,
+  pomodoroMode: 'focus',
+  pomodoroFocusTotal: 0,
+  dashboardReady: false,
+  chartsInited: {},
+};
+
+const ALL_SUBJECTS = ['Mathematics','Physics','Chemistry','Biology','History','English','Computer Sci','Economics'];
+
+const TOPICS = {
+  'Mathematics'  : ['Calculus','Linear Algebra','Probability','Differential Equations'],
+  'Physics'      : ['Mechanics','Electromagnetism','Optics','Thermodynamics'],
+  'Chemistry'    : ['Organic Chemistry','Physical Chemistry','Inorganic Chemistry','Electrochemistry'],
+  'Biology'      : ['Cell Biology','Genetics','Ecology','Human Physiology'],
+  'History'      : ['Modern History','Ancient Civilizations','World Wars','Political Movements'],
+  'English'      : ['Essay Writing','Grammar','Literature Analysis','Comprehension'],
+  'Computer Sci' : ['Algorithms','Data Structures','Operating Systems','Databases'],
+  'Economics'    : ['Microeconomics','Macroeconomics','International Trade','Statistics'],
+};
+
+/* ════════════════════════════════════════════════
+   ONBOARDING STEPS
+════════════════════════════════════════════════ */
+const steps = [
+  {
+    title: 'Your Exam Details',
+    desc: 'Tell us when and what you are preparing for',
+    render: () => `
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Exam Name / Goal</label>
+          <input class="form-input" id="inp-goal" placeholder="e.g. JEE Mains, NEET, UPSC…" value="${state.goal}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Exam Date</label>
+          <input type="date" class="form-input" id="inp-date" value="${state.examDate}"
+            min="${new Date().toISOString().split('T')[0]}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Daily Study Time (hours)</label>
+          <select class="form-input" id="inp-hours">
+            ${[1,2,3,4,5,6,8].map(h => `<option value="${h}" ${state.studyHours==h?'selected':''}>${h}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Current Level</label>
+          <select class="form-input" id="inp-level">
+            <option value="beginner"     ${state.level==='beginner'    ?'selected':''}>Beginner</option>
+            <option value="intermediate" ${state.level==='intermediate'?'selected':''}>Intermediate</option>
+            <option value="advanced"     ${state.level==='advanced'    ?'selected':''}>Advanced</option>
+          </select>
+        </div>
+      </div>`
+  },
+  {
+    title: 'Choose Your Subjects',
+    desc: 'Select subjects you are studying (pick all that apply)',
+    render: () => `
+      <div class="form-group full">
+        <label class="form-label">Your Subjects</label>
+        <div class="subject-chips">
+          ${ALL_SUBJECTS.map(s =>
+            `<div class="chip ${state.subjects.includes(s)?'selected':''}"
+              onclick="toggleSubject(this,'${s}')">${s}</div>`).join('')}
+        </div>
+      </div>
+      <div class="form-group full" style="margin-top:16px">
+        <label class="form-label">Weak Subjects (need most attention)</label>
+        <div class="subject-chips">
+          ${(state.subjects.length ? state.subjects : ALL_SUBJECTS).map(s =>
+            `<div class="chip ${state.weakSubjects.includes(s)?'selected':''}"
+              onclick="toggleWeak(this,'${s}')">${s}</div>`).join('')}
+        </div>
+      </div>`
+  },
+  {
+    title: 'Almost done! 🎉',
+    desc: 'Review your setup and generate your AI study plan',
+    render: () => `
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="background:var(--card2);border-radius:12px;padding:16px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div>
+              <div style="font-size:11px;color:var(--muted);margin-bottom:3px">EXAM GOAL</div>
+              <div style="font-weight:600">${state.goal || 'Not set'}</div>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--muted);margin-bottom:3px">EXAM DATE</div>
+              <div style="font-weight:600">${state.examDate
+                ? new Date(state.examDate).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})
+                : 'Not set'}</div>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--muted);margin-bottom:3px">DAILY HOURS</div>
+              <div style="font-weight:600">${state.studyHours} hours</div>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--muted);margin-bottom:3px">LEVEL</div>
+              <div style="font-weight:600;text-transform:capitalize">${state.level}</div>
+            </div>
+          </div>
+        </div>
+        <div style="background:var(--card2);border-radius:12px;padding:16px">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:8px">SUBJECTS</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            ${(state.subjects.length ? state.subjects : ['All subjects'])
+              .map(s => `<span class="sc-tag tag-done">${s}</span>`).join('')}
+          </div>
+        </div>
+        ${state.weakSubjects.length ? `
+        <div style="background:rgba(255,107,157,0.08);border:1px solid rgba(255,107,157,0.2);border-radius:12px;padding:16px">
+          <div style="font-size:11px;color:var(--accent4);margin-bottom:8px">WEAK AREAS (Priority Focus)</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            ${state.weakSubjects.map(s => `<span class="sc-tag tag-high">${s}</span>`).join('')}
+          </div>
+        </div>` : ''}
+      </div>`
+  }
+];
+
+function renderStep() {
+  const s = steps[state.step];
+  document.getElementById('step-card').innerHTML = `
+    <h2>${s.title}</h2>
+    <p>${s.desc}</p>
+    ${s.render()}
+    <div style="display:flex;gap:10px;margin-top:24px">
+      ${state.step > 0
+        ? '<button class="pomo-btn" onclick="prevStep()" style="flex:0 0 auto;width:auto;padding:14px 20px">← Back</button>'
+        : ''}
+      <button class="btn-primary" onclick="${state.step < 2 ? 'nextStep()' : 'launchDashboard()'}" style="flex:1">
+        ${state.step < 2 ? 'Continue →' : '🚀 Generate My Study Plan'}
+      </button>
+    </div>`;
+  document.querySelectorAll('.step-dot').forEach((d, i) => {
+    d.className = 'step-dot' + (i === state.step ? ' active' : '');
+  });
+}
+
+function saveStep() {
+  if (state.step === 0) {
+    state.goal       = document.getElementById('inp-goal')?.value  || state.goal;
+    state.examDate   = document.getElementById('inp-date')?.value  || state.examDate;
+    state.studyHours = parseInt(document.getElementById('inp-hours')?.value) || state.studyHours;
+    state.level      = document.getElementById('inp-level')?.value || state.level;
+  }
+}
+function nextStep() { saveStep(); state.step++; renderStep(); }
+function prevStep() { state.step--; renderStep(); }
+
+function toggleSubject(el, s) {
+  if (state.subjects.includes(s)) state.subjects = state.subjects.filter(x => x !== s);
+  else state.subjects.push(s);
+  el.classList.toggle('selected');
+}
+function toggleWeak(el, s) {
+  if (state.weakSubjects.includes(s)) state.weakSubjects = state.weakSubjects.filter(x => x !== s);
+  else state.weakSubjects.push(s);
+  el.classList.toggle('selected');
+}
+
+/* ════════════════════════════════════════════════
+   LAUNCH DASHBOARD
+════════════════════════════════════════════════ */
+function launchDashboard() {
+  if (state.subjects.length === 0) state.subjects = ['Mathematics','Physics','Chemistry'];
+  state.dashboardReady = true;
+  document.getElementById('onboarding').style.display = 'none';
+
+  const ready = { beginner: 38, intermediate: 62, advanced: 78 }[state.level] || 62;
+  state.readinessScore = ready;
+
+  updateCountdown();
+  populateDashboard();
+  renderSubjectConfidence();
+  renderTodaySchedule();
+  renderScheduleFull();
+  renderAIInsightsDash();
+  renderPomodoroSessions();
+  renderBadges();
+  renderChallenges();
+  renderAnalyticsInsights();
+  renderYTRecs();
+  renderAIPrompts();
+  renderRevisionList();
+
+  document.getElementById('streak-num').textContent = state.streak;
+
+  // Show dashboard
+  document.getElementById('page-dashboard').classList.add('active');
+  document.getElementById('page-title').textContent = 'Dashboard';
+
+  setTimeout(animateReadiness, 400);
+}
+
+function updateCountdown() {
+  if (!state.examDate) {
+    document.getElementById('countdown-display').textContent = 'No exam date set';
+    return;
+  }
+  const days = Math.ceil((new Date(state.examDate) - new Date()) / (1000*60*60*24));
+  document.getElementById('countdown-display').innerHTML =
+    `<strong>${days}</strong> days to ${state.goal || 'Exam'}`;
+}
+
+function populateDashboard() {
+  const r = state.readinessScore;
+  document.getElementById('m-hours').textContent  = state.studyHours + 'h';
+  document.getElementById('m-tasks').textContent  = '3/5';
+  document.getElementById('m-ready').textContent  = r + '%';
+  document.getElementById('m-streak').textContent = state.streak;
+  document.getElementById('readiness-pct').textContent = r + '%';
+  const statuses = { 38:'Keep grinding! 💪', 62:'Looking good! 🔥', 78:'Almost ready! ⚡' };
+  document.getElementById('readiness-status').textContent = statuses[r] || 'Keep going!';
+}
+
+function animateReadiness() {
+  const pct = state.readinessScore;
+  document.getElementById('readiness-ring').style.strokeDashoffset = 314 - (314 * pct / 100);
+}
+
+function renderSubjectConfidence() {
+  const subs = state.subjects.slice(0, 4);
+  const confs = ['Low','Medium','High'];
+  const colors = ['var(--accent4)','var(--accent3)','var(--accent2)'];
+  const widths = [28, 55, 82];
+  document.getElementById('subject-confidence').innerHTML = subs.map((s, i) => {
+    const cIdx = state.weakSubjects.includes(s) ? 0 : (i % 3);
+    return `
+      <div class="subject-row">
+        <div class="subject-name">${s.split(' ')[0]}</div>
+        <div class="subject-bar-wrap">
+          <div class="subject-bar" style="width:${widths[cIdx]}%;background:${colors[cIdx]}"></div>
+        </div>
+        <span class="subject-conf ${['conf-low','conf-med','conf-high'][cIdx]}">${confs[cIdx]}</span>
+      </div>`;
+  }).join('');
+}
+
+function buildScheduleCards(subs) {
+  const times      = ['8:00–9:00 AM','9:15–10:15 AM','10:30–11:30 AM','11:45–12:30 PM','2:00–3:00 PM','3:15–4:00 PM'];
+  const priorities = ['HIGH','HIGH','MEDIUM','MEDIUM','LOW','DONE'];
+  const tagCls     = ['tag-high','tag-high','tag-med','tag-med','conf-low','tag-done'];
+  return subs.slice(0, 6).map((s, i) => {
+    const topics = TOPICS[s] || ['Core Concepts','Practice Problems'];
+    const topic  = topics[i % topics.length];
+    const done   = i < 2;
+    const dotsHTML = [0,1,2,3].map(p =>
+      `<div class="pom-dot ${(done && p < 2) ? 'done' : ''}"></div>`).join('');
+    return `
+      <div class="schedule-card ${done?'completed':''}" onclick="this.classList.toggle('completed')">
+        <div class="sc-time">${times[i]}</div>
+        <div class="sc-subject">${s}</div>
+        <div class="sc-topic">${topic}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span class="sc-tag ${tagCls[i]}">${priorities[i]}</span>
+          <div class="pomodoro-mini">${dotsHTML}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderTodaySchedule() {
+  document.getElementById('today-schedule').innerHTML = buildScheduleCards(state.subjects);
+}
+function renderScheduleFull() {
+  document.getElementById('schedule-full').innerHTML = buildScheduleCards(state.subjects);
+}
+
+function renderAIInsightsDash() {
+  const weak = (state.weakSubjects[0] || state.subjects[0]) || 'this subject';
+  const days  = state.examDate
+    ? Math.ceil((new Date(state.examDate) - new Date()) / (1000*60*60*24))
+    : 30;
+  const insights = [
+    `<strong>${weak}</strong> needs 40% more focus time. Allocate the morning slot for maximum retention.`,
+    `Your consistency is strong! Maintaining a ${state.streak}-day streak unlocks adaptive difficulty boosts.`,
+    `With <strong>${days} days</strong> to your exam, prioritise revision over new topics from next week.`,
+    `Pomodoro sessions improve focus scores. Aim for 4 sessions daily to hit your readiness goal.`,
+  ];
+  document.getElementById('ai-insights-dash').innerHTML =
+    insights.map(t => `<div class="insight-item"><p>${t}</p></div>`).join('');
+}
+
+/* ════════════════════════════════════════════════
+   POMODORO
+════════════════════════════════════════════════ */
+function renderPomodoroSessions() {
+  const el = document.getElementById('pomo-session-dots');
+  if (!el) return;
+  el.innerHTML = [0,1,2,3].map(i =>
+    `<div style="width:10px;height:10px;border-radius:50%;background:${
+      i < state.pomodoroSessions ? 'var(--accent)' : 'rgba(255,255,255,0.1)'}"></div>`
+  ).join('');
+}
+
+function pomodoroToggle() {
+  const btn = document.getElementById('pomo-start');
+  if (state.pomodoroActive) {
+    clearInterval(state.pomodoroInterval);
+    state.pomodoroActive = false;
+    btn.textContent = '▶ Resume';
+  } else {
+    state.pomodoroTotal = parseInt(document.getElementById('pomo-focus').value) * 60;
+    if (!state.pomodoroSeconds || state.pomodoroSeconds >= state.pomodoroTotal)
+      state.pomodoroSeconds = state.pomodoroTotal;
+    state.pomodoroActive = true;
+    btn.textContent = '⏸ Pause';
+    state.pomodoroInterval = setInterval(() => {
+      state.pomodoroSeconds--;
+      if (state.pomodoroSeconds <= 0) {
+        clearInterval(state.pomodoroInterval);
+        state.pomodoroActive = false;
+        state.pomodoroSessions++;
+        state.pomodoroFocusTotal += state.pomodoroTotal / 60;
+        document.getElementById('pomo-count').textContent   = state.pomodoroSessions;
+        document.getElementById('pomo-focused').textContent = Math.round(state.pomodoroFocusTotal) + 'm';
+        state.pomodoroSeconds = parseInt(document.getElementById('pomo-break').value) * 60;
+        state.pomodoroMode = 'break';
+        document.getElementById('pomo-label').textContent = '☕ Break Time!';
+        btn.textContent = '▶ Start Break';
+        renderPomodoroSessions();
+        return;
+      }
+      updatePomoDisplay();
+    }, 1000);
+  }
+}
+
+function pomodoroReset() {
+  clearInterval(state.pomodoroInterval);
+  state.pomodoroActive  = false;
+  state.pomodoroTotal   = parseInt(document.getElementById('pomo-focus').value) * 60;
+  state.pomodoroSeconds = state.pomodoroTotal;
+  state.pomodoroMode    = 'focus';
+  document.getElementById('pomo-label').textContent = 'Focus Session';
+  document.getElementById('pomo-start').textContent = '▶ Start';
+  updatePomoDisplay();
+}
+
+function updatePomoDisplay() {
+  const m = Math.floor(state.pomodoroSeconds / 60).toString().padStart(2,'0');
+  const s = (state.pomodoroSeconds % 60).toString().padStart(2,'0');
+  document.getElementById('pomo-display').textContent = `${m}:${s}`;
+  const total = state.pomodoroMode === 'break'
+    ? parseInt(document.getElementById('pomo-break').value) * 60
+    : state.pomodoroTotal;
+  const offset = 440 * (1 - state.pomodoroSeconds / total);
+  const ring = document.getElementById('pomo-ring-circle');
+  ring.style.strokeDashoffset = offset;
+  ring.style.stroke = state.pomodoroMode === 'break' ? 'var(--accent2)' : 'var(--accent)';
+}
+
+/* ════════════════════════════════════════════════
+   BADGES & ACHIEVEMENTS
+════════════════════════════════════════════════ */
+const BADGES = [
+  { emoji:'🔥', name:'Week Warrior',   desc:'7-day study streak',        locked:false },
+  { emoji:'📚', name:'Bookworm',        desc:'50 hours studied',           locked:false },
+  { emoji:'🎯', name:'Sharpshooter',    desc:'10 topics mastered',         locked:false },
+  { emoji:'⚡', name:'Speed Learner',   desc:'5 Pomodoros in a day',       locked:false },
+  { emoji:'🌟', name:'All-Nighter',     desc:'Studied past midnight',      locked:true  },
+  { emoji:'🏆', name:'Champion',        desc:'Reach 90% readiness',        locked:true  },
+  { emoji:'🧠', name:'Genius Mode',     desc:'30-day streak',              locked:true  },
+  { emoji:'🚀', name:'Rocket Start',    desc:'First plan generated',       locked:false },
+];
+
+function renderBadges() {
+  document.getElementById('badges-grid').innerHTML = BADGES.map(b => `
+    <div class="badge-card ${b.locked?'locked':''}">
+      <div class="badge-emoji">${b.emoji}</div>
+      <div class="badge-name">${b.name}</div>
+      <div class="badge-desc">${b.desc}</div>
+    </div>`).join('');
+}
+
+function renderChallenges() {
+  const challenges = [
+    { label:'Complete 5 Pomodoro sessions',      prog: 3,                               goal: 5 },
+    { label:'Study all weak subjects today',      prog: 1,                               goal: state.weakSubjects.length || 2 },
+    { label:'Hit 85% readiness score',            prog: state.readinessScore || 62,      goal: 85 },
+  ];
+  document.getElementById('challenges').innerHTML = challenges.map(c => {
+    const pct = Math.min(100, Math.round(c.prog / c.goal * 100));
+    return `
+      <div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px">
+          <span>${c.label}</span>
+          <span style="color:var(--muted)">${c.prog}/${c.goal}</span>
+        </div>
+        <div style="height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px;transition:width 1s ease"></div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════════════════
+   ANALYTICS
+════════════════════════════════════════════════ */
+function renderAnalyticsInsights() {
+  const el = document.getElementById('analytics-insights');
+  if (!el) return;
+  const insights = [
+    { icon:'📈', label:'Best Study Time', val:'8–10 AM'   },
+    { icon:'🎯', label:'Avg Session',     val:'47 min'    },
+    { icon:'🔁', label:'Retention Rate',  val:'73%'       },
+  ];
+  el.innerHTML = insights.map(i => `
+    <div class="insight-item" style="text-align:center">
+      <div style="font-size:24px;margin-bottom:6px">${i.icon}</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:4px">${i.label}</div>
+      <div style="font-family:var(--font-head);font-size:20px;font-weight:700">${i.val}</div>
+    </div>`).join('');
+}
+
+function renderProgressChart() {
+  const ctx = document.getElementById('progressChart');
+  if (!ctx || state.chartsInited.progress) return;
+  state.chartsInited.progress = true;
+  const base = state.readinessScore;
+  const data = [base-18,base-14,base-10,base-7,base-4,base-1,base].map(v => Math.max(0,v));
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Today'],
+      datasets: [{
+        label: 'Readiness %',
+        data,
+        borderColor: '#4ECDC4',
+        backgroundColor: 'rgba(78,205,196,0.1)',
+        tension: 0.4,
+        fill: true,
+        pointBackgroundColor: '#4ECDC4',
+        pointRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          min: 0, max: 100,
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#7A7F9A', callback: v => v + '%' },
+        },
+        x: { grid: { display: false }, ticks: { color: '#7A7F9A' } },
+      }
+    }
+  });
+}
+
+function renderSubjectChart() {
+  const ctx = document.getElementById('subjectChart');
+  if (!ctx || state.chartsInited.subject) return;
+  state.chartsInited.subject = true;
+  const subs = state.subjects.slice(0, 5);
+  const hours = subs.map((_, i) => parseFloat((state.studyHours * (0.32 - i * 0.04)).toFixed(1)));
+  const colors = ['#7C6AF7','#4ECDC4','#FFD166','#FF6B9D','#a78bfa'];
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: subs,
+      datasets: [{ data: hours, backgroundColor: colors.slice(0, subs.length), borderWidth: 0, hoverOffset: 6 }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: { legend: { display: false } },
+    }
+  });
+}
+
+function renderWeekChart() {
+  const ctx = document.getElementById('weekChart');
+  if (!ctx || state.chartsInited.week) return;
+  state.chartsInited.week = true;
+  const h = state.studyHours;
+  const data = [h*0.8, h, h*0.9, h*1.1, h, h*0.7, h*0.6].map(v => parseFloat(v.toFixed(1)));
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+      datasets: [{
+        label: 'Hours',
+        data,
+        backgroundColor: 'rgba(124,106,247,0.6)',
+        borderColor: 'rgba(124,106,247,1)',
+        borderWidth: 1,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: Math.ceil(h * 1.5),
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#7A7F9A' },
+        },
+        x: { grid: { display: false }, ticks: { color: '#7A7F9A' } },
+      }
+    }
+  });
+}
+
+/* ════════════════════════════════════════════════
+   YOUTUBE RECOMMENDATIONS
+════════════════════════════════════════════════ */
+function renderYTRecs() {
+  const subs = (state.subjects.length ? state.subjects : ['Mathematics','Physics']).slice(0, 3);
+  document.getElementById('yt-recommendations').innerHTML = subs.map(s => {
+    const q = encodeURIComponent(`best ${s} lectures exam preparation`);
+    return `
+      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,0.04);
+        border-radius:10px;margin-bottom:8px;cursor:pointer"
+        onclick="window.open('https://www.youtube.com/results?search_query=${q}','_blank')">
+        <div style="width:36px;height:36px;background:rgba(255,0,0,0.2);border-radius:8px;
+          display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">▶</div>
+        <div>
+          <div style="font-size:13px;font-weight:600">${s} — Top Exam Lectures</div>
+          <div style="font-size:12px;color:var(--muted)">Curated for exam prep · YouTube</div>
+        </div>
+        <div style="margin-left:auto;font-size:11px;color:var(--accent)">Open →</div>
+      </div>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════════════════
+   AI PROMPTS
+════════════════════════════════════════════════ */
+function renderAIPrompts() {
+  const sub = state.subjects[0] || 'Mathematics';
+  const prompts = [
+    `What topics should I focus on for ${sub}?`,
+    `Give me a revision plan for the last week before exam`,
+    `How can I improve my weak subjects faster?`,
+    `Analyse my current readiness and suggest improvements`,
+  ];
+  document.getElementById('ai-prompts').innerHTML = prompts.map(p =>
+    `<button class="chip selected" onclick="document.getElementById('ai-input').value='${p}';askAI()">${p}</button>`
+  ).join('');
+}
+
+/* ════════════════════════════════════════════════
+   AI CALL (Anthropic API)
+════════════════════════════════════════════════ */
+async function askAI() {
+  const input   = document.getElementById('ai-input');
+  const q       = input.value.trim();
+  if (!q) return;
+
+  const area    = document.getElementById('ai-response-area');
+  const loading = document.getElementById('ai-loading');
+  const content = document.getElementById('ai-response-content');
+  area.style.display    = 'block';
+  loading.style.display = 'flex';
+  content.style.display = 'none';
+
+  const context = `Student Profile:
+- Exam: ${state.goal || 'General Exam'}
+- Exam Date: ${state.examDate || 'Not set'}
+- Subjects: ${state.subjects.join(', ') || 'General'}
+- Weak Areas: ${state.weakSubjects.join(', ') || 'None specified'}
+- Daily Study Time: ${state.studyHours} hours
+- Level: ${state.level}
+- Current Readiness: ${state.readinessScore}%
+- Study Streak: ${state.streak} days
+
+Student Question: ${q}
+
+You are a friendly, motivating AI study coach. Give specific, actionable advice.
+Use bullet points where helpful. Keep response to 150-200 words. Be encouraging!`;
+
+  try {
+    const res  = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: context }],
+      }),
+    });
+    const data = await res.json();
+    const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+    loading.style.display = 'none';
+    content.style.display = 'block';
+    content.innerHTML = '<h4>🤖 AI Study Coach</h4>' + formatAI(text);
+    input.value = '';
+  } catch (e) {
+    loading.style.display = 'none';
+    content.style.display = 'block';
+    content.innerHTML = '<h4>🤖 AI Study Coach</h4><p style="color:var(--muted)">Could not connect to AI. Please check your connection and try again.</p>';
+  }
+}
+
+function formatAI(text) {
+  return '<p>' +
+    text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/\n[•\-]\s/g, '<br>• ')
+      .replace(/\n/g, '<br>')
+    + '</p>';
+}
+
+/* ════════════════════════════════════════════════
+   REVISION LIST
+════════════════════════════════════════════════ */
+function renderRevisionList() {
+  const subs = state.subjects.slice(0, 4);
+  document.getElementById('revision-list').innerHTML = subs.map((s, i) => {
+    const days   = [1, 3, 7, 14];
+    const urgent = i < 2;
+    return `
+      <div style="display:flex;align-items:center;justify-content:space-between;
+        padding:12px 0;border-bottom:1px solid var(--border)">
+        <div>
+          <div style="font-size:13px;font-weight:600">${s}</div>
+          <div style="font-size:11px;color:var(--muted)">${(TOPICS[s] || ['Core Concepts'])[0]}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:11px;color:var(--muted)">Due in ${days[i]}d</span>
+          <span class="sc-tag ${urgent?'tag-high':'tag-med'}">${urgent?'URGENT':'SOON'}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════════════════
+   PAGE NAVIGATION
+════════════════════════════════════════════════ */
+const PAGE_NAMES = {
+  dashboard:    'Dashboard',
+  schedule:     'Schedule',
+  pomodoro:     'Pomodoro Timer',
+  ai:           'AI Insights',
+  analytics:    'Analytics',
+  achievements: 'Achievements',
+};
+
+function showPage(name, navEl) {
+  if (!state.dashboardReady) return;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const page = document.getElementById('page-' + name);
+  if (page) page.classList.add('active');
+  if (navEl) navEl.classList.add('active');
+  document.getElementById('page-title').textContent = PAGE_NAMES[name] || name;
+
+  if (name === 'analytics') {
+    setTimeout(() => { renderProgressChart(); renderSubjectChart(); }, 100);
+  }
+}
+
+function switchTab(el, tab) {
+  document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  ['today','week','revision'].forEach(t => {
+    const div = document.getElementById('schedule-' + t);
+    if (div) div.style.display = t === tab ? 'block' : 'none';
+  });
+  if (tab === 'week') setTimeout(renderWeekChart, 100);
+}
+
+/* ════════════════════════════════════════════════
+   KEYBOARD SHORTCUT
+════════════════════════════════════════════════ */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.activeElement?.id === 'ai-input') askAI();
+});
+
+/* ════════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════════ */
+renderStep();
+</script>
+</body>
+</html>
